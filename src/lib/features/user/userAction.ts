@@ -7,8 +7,12 @@ export const fetchUsers = () => {
             const response = await fetch('https://jsonplaceholder.typicode.com/users');
             const users = await response.json();
             dispatch(fetchUsersSuccess(users));
-        } catch (error: any) {
-            dispatch(fetchUsersFailure(error.message));
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                dispatch(fetchUsersFailure(error.message));
+            } else {
+                dispatch(fetchUsersFailure("An unknown error occurred"));
+            }
         }
     };
 };
