@@ -39,7 +39,11 @@ interface DataTableControlsProps<TData> {
 
 export function DataTableControls<TData>({table}: DataTableControlsProps<TData>) {
     const dispatch = useAppDispatch();
-    const { pagination, rowPinning, selectedColumn, globalFilter } = useAppSelector((state: RootState) => state.table);
+    const {
+        pagination,
+        rowPinning,
+        selectedColumn, globalFilter
+    } = useAppSelector((state: RootState) => state.table);
     const [filterValue, setFilterValue] = useState("");
 
     useEffect(() => {
@@ -52,10 +56,7 @@ export function DataTableControls<TData>({table}: DataTableControlsProps<TData>)
 
     const allColumns = table
         .getAllColumns()
-        .filter(
-            (column) =>
-                typeof column.accessorFn !== "undefined" && column.getCanHide()
-        )
+        .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
 
     const selectedRows = table.getSelectedRowModel().rows;
 
@@ -104,7 +105,7 @@ export function DataTableControls<TData>({table}: DataTableControlsProps<TData>)
             dispatch(setColumnFilters([]))
             dispatch(setGlobalFilter(""))
             table.resetGlobalFilter()
-            setFilterValue("") // Dodajemy to, aby wyczyścić wartość filtra w lokalnym stanie
+            setFilterValue("")
         }
     }
 
