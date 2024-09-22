@@ -20,24 +20,23 @@ import {setPagination} from "@/lib/features/table/tableSlice";
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>
+    tableId: string
 }
 
-export function DataTablePagination<TData>({
-                                               table,
-                                           }: DataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({table, tableId}: DataTablePaginationProps<TData>) {
 
     const dispatch = useAppDispatch();
-    const { pagination } = useAppSelector((state: RootState) => state.table);
+    const { pagination } = useAppSelector((state: RootState) => state.table[tableId] || {});
 
     const handlePageChange = (newPageIndex: number) => {
-        dispatch(setPagination({ ...pagination, pageIndex: newPageIndex }));
+        dispatch(setPagination({tableId: tableId, pagination: {
+                pageIndex: newPageIndex,
+                pageSize: pagination.pageSize
+            }}));
     };
 
     const handlePageSizeChange = (newPageSize: number) => {
-        dispatch(setPagination({
-            pageIndex: 0,
-            pageSize: newPageSize
-        }));
+        dispatch(setPagination({tableId: tableId ,pagination: {pageIndex: 0, pageSize: newPageSize}}));
     };
 
     return (

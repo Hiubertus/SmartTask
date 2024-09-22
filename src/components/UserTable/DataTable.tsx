@@ -1,5 +1,3 @@
-"use client"
-
 import {
     rankItem,
 } from '@tanstack/match-sorter-utils'
@@ -43,14 +41,14 @@ import {useAppDispatch, useAppSelector} from "@/lib/hooks";
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
+    tableId: string
+    removeRow: (id: string | number) => void;
+    refreshData: () => void;
 }
 
 const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
-    // Rank the item
     const itemRank = rankItem(row.getValue(columnId), value)
-    addMeta({
-        itemRank,
-    })
+    addMeta({ itemRank })
     return itemRank.passed
 }
 
@@ -60,12 +58,10 @@ declare module '@tanstack/react-table' {
     }
 }
 
-export function DataTable<TData, TValue>({
-                                             columns,
-                                             data,
-                                         }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({columns, data, tableId, removeRow, refreshData}: DataTableProps<TData, TValue>) {
 
     const dispatch = useAppDispatch();
+
     const {
         sorting,
         columnFilters,
@@ -74,8 +70,7 @@ export function DataTable<TData, TValue>({
         rowSelection,
         rowPinning,
         pagination,
-    } = useAppSelector((state: RootState) => state.table);
-
+    } = useAppSelector((state: RootState) => state.table[tableId]);
 
     const handleUpdater = <T, >(value: Updater<T>, currentState: T): T => {
         return typeof value === "function" ? (value as (old: T) => T)(currentState) : value;
@@ -93,19 +88,19 @@ export function DataTable<TData, TValue>({
         getFilteredRowModel: getFilteredRowModel(),
         globalFilterFn: 'fuzzy',
         onSortingChange: (sortingUpdater) =>
-            dispatch(setSorting(handleUpdater(sortingUpdater, sorting))),
+            dispatch(setSorting({ tableId, sorting: handleUpdater(sortingUpdater, sorting) })),
         onColumnFiltersChange: (filtersUpdater) =>
-            dispatch(setColumnFilters(handleUpdater(filtersUpdater, columnFilters))),
+            dispatch(setColumnFilters({ tableId, columnFilters: handleUpdater(filtersUpdater, columnFilters) })),
         onColumnVisibilityChange: (visibilityUpdater) =>
-            dispatch(setColumnVisibility(handleUpdater(visibilityUpdater, columnVisibility))),
+            dispatch(setColumnVisibility({ tableId, columnVisibility: handleUpdater(visibilityUpdater, columnVisibility) })),
         onGlobalFilterChange: (filterUpdater) =>
-            dispatch(setGlobalFilter(handleUpdater(filterUpdater, globalFilter))),
+            dispatch(setGlobalFilter({ tableId, globalFilter: handleUpdater(filterUpdater, globalFilter) })),
         onRowSelectionChange: (selectionUpdater) =>
-            dispatch(setRowSelection(handleUpdater(selectionUpdater, rowSelection))),
+            dispatch(setRowSelection({ tableId, rowSelection: handleUpdater(selectionUpdater, rowSelection) })),
         onRowPinningChange: (pinningUpdater) =>
-            dispatch(setRowPinning(handleUpdater(pinningUpdater, rowPinning))),
+            dispatch(setRowPinning({ tableId, rowPinning: handleUpdater(pinningUpdater, rowPinning) })),
         onPaginationChange: (paginationUpdater) => {
-            dispatch(setPagination(handleUpdater(paginationUpdater, pagination)))
+            dispatch(setPagination({ tableId, pagination: handleUpdater(paginationUpdater, pagination) }))
         },
         keepPinnedRows: true,
         autoResetPageIndex: false,
@@ -123,7 +118,7 @@ export function DataTable<TData, TValue>({
     return (
         <div>
             <div className="flex items-center py-4">
-                <DataTableControls table={table}/>
+                <DataTableControls table={table} tableId={tableId} removeRow={removeRow} refreshData={refreshData}/>
             </div>
 
             <div className="rounded-md border">
@@ -148,7 +143,7 @@ export function DataTable<TData, TValue>({
                     </TableHeader>
                     <TableBody>
                         {table.getTopRows().map((row) => (
-                            <TableRow key={row.id} data-state={row.getIsPinned() && "pinned"} className={"bg-blue-200"}>
+                            <TableRow key={row.id} data-state={row.getIsPinned() && "pinned"} className={"bg-blue-300 hover:bg-blue-200"}>
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -158,7 +153,7 @@ export function DataTable<TData, TValue>({
                         ))}
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows
-                                .filter(row => !row.getIsPinned()) // Wyklucz przypięte wiersze
+                                .filter(row => !row.getIsPinned())
                                 .map((row) => (
                                     <TableRow
                                         key={row.id}
@@ -182,7 +177,7 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
             <div className={"mt-4"}>
-                <DataTablePagination table={table}/>
+                <DataTablePagination table={table} tableId={tableId}/>
             </div>
 
         </div>
