@@ -13,9 +13,6 @@ export default function Home() {
                     Fully cutomize filters, columns and rows. All options have global state that persists after changing
                     pages.
                 </p>
-                <p className="text-lg text-gray-600">
-                    This UserTable can be further modified to be reusable component
-                </p>
             </header>
             <main>
                 <UserTable/>

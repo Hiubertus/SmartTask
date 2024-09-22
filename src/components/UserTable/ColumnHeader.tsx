@@ -15,17 +15,43 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui"
-import React from "react";
+import React, {useCallback, useState} from "react";
 
 interface DataTableColumnHeaderProps<TData, TValue>
     extends React.HTMLAttributes<HTMLDivElement> {
-    column: Column<TData, TValue>
-    title: string
+    column: Column<TData, TValue>;
+    title: string;
+    setLoading: (isLoading: boolean) => void;
 }
 
-export function DataTableColumnHeader<TData, TValue>({column, title, className}: DataTableColumnHeaderProps<TData, TValue>) {
+export function DataTableColumnHeader<TData, TValue>({
+                                                         column,
+                                                         title,
+                                                         className,
+                                                         setLoading,
+                                                     }: DataTableColumnHeaderProps<TData, TValue>) {
+    const [sortTimeout, setSortTimeout] = useState<NodeJS.Timeout | null>(null);
+
+    const debounceSortChange = useCallback(
+        (desc: boolean) => {
+            if (sortTimeout) {
+                clearTimeout(sortTimeout);
+            }
+
+            setLoading(true);
+
+            const newTimeout = setTimeout(() => {
+                column.toggleSorting(desc);
+                setLoading(false);
+            }, 1500);
+
+            setSortTimeout(newTimeout);
+        },
+        [sortTimeout, column, setLoading]
+    );
+
     if (!column.getCanSort()) {
-        return <div className={cn(className)}>{title}</div>
+        return <div className={cn(className)}>{title}</div>;
     }
 
     return (
@@ -48,11 +74,11 @@ export function DataTableColumnHeader<TData, TValue>({column, title, className}:
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                    <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
+                    <DropdownMenuItem onClick={() => debounceSortChange(false)}>
                         <ArrowUpIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
                         Asc
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
+                    <DropdownMenuItem onClick={() => debounceSortChange(true)}>
                         <ArrowDownIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
                         Desc
                     </DropdownMenuItem>
@@ -64,5 +90,5 @@ export function DataTableColumnHeader<TData, TValue>({column, title, className}:
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-    )
+    );
 }

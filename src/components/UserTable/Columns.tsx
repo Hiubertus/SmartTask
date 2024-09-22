@@ -14,6 +14,7 @@ export function generateColumns<T extends HasId>(
     keys: (keyof T)[],
     removeRow: (id: string | number) => void,
     editField: (id: string | number, field: keyof T, value: string) => void,
+    setLoading: (isLoading: boolean) => void,
     tableId: string
 ): ColumnDef<T>[] {
     return [
@@ -44,6 +45,7 @@ export function generateColumns<T extends HasId>(
             header: ({ column }: { column: Column<T> }) => (
                 <DataTableColumnHeader
                     column={column}
+                    setLoading={setLoading}
                     title={typeof key === 'string' ? key.charAt(0).toUpperCase() + key.slice(1) : String(key)}
                 />
             ),

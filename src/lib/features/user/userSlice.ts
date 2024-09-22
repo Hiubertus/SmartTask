@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {createDataSlice, DataState} from "@/lib/features/data/dataSlice";
 
 export interface User {
     id: number;
@@ -8,55 +8,22 @@ export interface User {
     phone: string;
 }
 
-interface UserState {
-    users: User[];
-    error: string | null;
-    dataFetched: boolean;
+const initialUserState: DataState<User> = {
+    data: [],
+    dataFetched: false,
+    isLoading: true
 }
 
-const initialState: UserState = {
-    users: [],
-    error: null,
-    dataFetched: false,
-};
-
-export const userSlice = createSlice({
+export const userSlice = createDataSlice<User>({
     name: 'users',
-    initialState,
-    reducers: {
-        fetchUsersSuccess: (state, action: PayloadAction<User[]>) => {
-            state.users = action.payload;
-            state.error = null;
-            state.dataFetched = true;
-        },
-        fetchUsersFailure: (state, action: PayloadAction<string>) => {
-            state.error = action.payload;
-            state.users = [];
-            state.dataFetched = false;
-        },
-        deleteUser: (state, action: PayloadAction<number>) => {
-            const index = state.users.findIndex(user => user.id === action.payload);
-            if (index !== -1) {
-                state.users.splice(index, 1);
-            }
-        },
-        putUserField: (state, action: PayloadAction<{ id: number, field: keyof User, value: string }>) => {
-            const { id, field, value } = action.payload;
-            const userIndex = state.users.findIndex(user => user.id === id);
-            if (userIndex !== -1) {
-                state.users[userIndex] = {
-                    ...state.users[userIndex],
-                    [field]: value
-                };
-            }
-        },
-    }
+    initialState: initialUserState,
 });
-
 export const {
-    fetchUsersSuccess,
-    fetchUsersFailure,
-    deleteUser,
-    putUserField
+    fetchData: fetchUsers,
+    deleteData: deleteUser,
+    editData: editUser,
+    setLoading: setLoading,
 } = userSlice.actions;
+
 export default userSlice.reducer;
+

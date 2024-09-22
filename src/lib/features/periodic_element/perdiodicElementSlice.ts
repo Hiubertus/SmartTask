@@ -1,59 +1,28 @@
-import {createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {createDataSlice, DataState} from "@/lib/features/data/dataSlice";
 
 export interface PeriodicElement {
-    id: number
-    name: string
-    weight: number
-    symbol: string
+    id: number;
+    name: string;
+    weight: number;
+    symbol: string;
 }
 
-interface PeriodicElementState {
-    periodicElements: PeriodicElement[];
-    error: string | null;
-    dataFetched: boolean;
-}
-const initialState: PeriodicElementState = {
-    periodicElements: [],
-    error: null,
+const initialPeriodicElementState: DataState<PeriodicElement> = {
+    data: [],
     dataFetched: false,
+    isLoading: true,
 };
 
-export const periodicElementSlice = createSlice({
-    name: "periodicElements",
-    initialState: initialState,
-    reducers: {
-        fetchPeriodicElementSuccess: (state, action: PayloadAction<PeriodicElement[]>) => {
-            state.periodicElements = action.payload;
-            state.error = null;
-            state.dataFetched = true;
-        },
-        fetchPeriodicElementFailure: (state, action: PayloadAction<string>) => {
-            state.error = action.payload;
-            state.periodicElements = [];
-            state.dataFetched = false;
-        },
-        deletePeriodicElement: (state, action: PayloadAction<number>) => {
-            const index = state.periodicElements.findIndex(periodicElement => periodicElement.id === action.payload);
-            if (index !== -1) {
-                state.periodicElements.splice(index, 1);
-            }
-        },
-        putPeriodicElementField: (state, action: PayloadAction<{ id: number, field: keyof PeriodicElement, value: string }>) => {
-            const { id, field, value } = action.payload;
-            const userIndex = state.periodicElements.findIndex(periodicElement => periodicElement.id === id);
-            if (userIndex !== -1) {
-                state.periodicElements[userIndex] = {
-                    ...state.periodicElements[userIndex],
-                    [field]: value
-                };
-            }
-        },
-    }
-})
+export const periodicElementSlice = createDataSlice<PeriodicElement>({
+    name: 'periodicElements',
+    initialState: initialPeriodicElementState,
+});
+
 export const {
-    fetchPeriodicElementSuccess,
-    fetchPeriodicElementFailure,
-    deletePeriodicElement,
-    putPeriodicElementField
-} = periodicElementSlice.actions
-export default periodicElementSlice.reducer
+    fetchData: fetchPeriodicElements,
+    deleteData: deletePeriodicElement,
+    editData: editPeriodicElement,
+    setLoading: setLoading,
+} = periodicElementSlice.actions;
+
+export default periodicElementSlice.reducer;
