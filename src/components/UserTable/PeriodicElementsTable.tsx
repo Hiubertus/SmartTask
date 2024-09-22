@@ -21,6 +21,8 @@ export const PeriodicElementsTable: React.FC = () => {
 
     const showErrorToast = useErrorToast();
 
+
+
     const removeRow = useCallback((id: string | number) => {
         if (typeof id === "number") {
             try {
@@ -45,6 +47,16 @@ export const PeriodicElementsTable: React.FC = () => {
         dispatch(setLoadingPeriodicElement(isLoading))
     }, [dispatch])
 
+    useEffect(() => {
+        if (!dataFetched) {
+            try {
+                dispatch(getPeriodicElements());
+            } catch (error: unknown) {
+                showErrorToast(`Error while fetching periodic elements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+    }, [dispatch, showErrorToast, dataFetched]);
+
     const refreshData = useCallback(() => {
         setLoading(true);
         setTimeout(() => {
@@ -58,20 +70,7 @@ export const PeriodicElementsTable: React.FC = () => {
         }, 1500);
     }, [dispatch, showErrorToast, setLoading]);
 
-    useEffect(() => {
-        if (!dataFetched) {
-            setLoading(true);
-            setTimeout(() => {
-                try {
-                    dispatch(getPeriodicElements());
-                } catch (error: unknown) {
-                    showErrorToast(`Error while fetching periodic elements: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                } finally {
-                    setLoading(false);
-                }
-            }, 1500);
-        }
-    }, [dispatch, showErrorToast, dataFetched, setLoading]);
+
 
     const columns = generateColumns<PeriodicElement>(
         ["id", "name", "weight", "symbol"],
@@ -94,7 +93,9 @@ export const PeriodicElementsTable: React.FC = () => {
                                 removeRow={removeRow}
                                 refreshData={refreshData}
                                 setLoading={setLoading}
-                                isLoading={isLoading}/>
+                                isLoading={isLoading}
+                                dataFetched={dataFetched}
+                                />
                         </div>
                     </div>
                 </div>

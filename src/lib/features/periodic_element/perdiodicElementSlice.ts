@@ -10,7 +10,7 @@ export interface PeriodicElement {
 const initialPeriodicElementState: DataState<PeriodicElement> = {
     data: [],
     dataFetched: false,
-    isLoading: true,
+    isLoading: false,
 };
 
 export const periodicElementSlice = createDataSlice<PeriodicElement>({
