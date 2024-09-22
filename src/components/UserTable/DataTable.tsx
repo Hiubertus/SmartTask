@@ -24,7 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui"
-import React, {useEffect} from "react";
+import React from "react";
 import {DataTablePagination} from "@/components/UserTable/DataTablePagination";
 import {DataTableControls} from "@/components/UserTable/DataTableControls";
 import {
@@ -48,6 +48,7 @@ interface DataTableProps<TData, TValue> {
     refreshData: () => void;
     setLoading: (isLoading: boolean) => void;
     isLoading: boolean;
+    dataFetched: boolean;
 }
 
 const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
@@ -62,7 +63,7 @@ declare module '@tanstack/react-table' {
     }
 }
 
-export function DataTable<TData, TValue>({columns, data, tableId, removeRow, refreshData, setLoading, isLoading}: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({columns, data, tableId, removeRow, refreshData, setLoading, isLoading, dataFetched}: DataTableProps<TData, TValue>) {
 
     const dispatch = useAppDispatch();
 
@@ -79,15 +80,6 @@ export function DataTable<TData, TValue>({columns, data, tableId, removeRow, ref
     const handleUpdater = <T, >(value: Updater<T>, currentState: T): T => {
         return typeof value === "function" ? (value as (old: T) => T)(currentState) : value;
     };
-
-    useEffect(() => {
-        setLoading(true);
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, [setLoading]);
-
 
     const table = useReactTable({
         data,
@@ -132,7 +124,7 @@ export function DataTable<TData, TValue>({columns, data, tableId, removeRow, ref
     })
 
 
-    if (isLoading) {
+    if (isLoading || !dataFetched) {
         return (
             <div>
                 <div className="flex items-center py-4">

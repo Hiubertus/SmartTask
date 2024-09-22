@@ -11,7 +11,7 @@ export interface User {
 const initialUserState: DataState<User> = {
     data: [],
     dataFetched: false,
-    isLoading: true
+    isLoading: false
 }
 
 export const userSlice = createDataSlice<User>({

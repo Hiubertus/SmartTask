@@ -18,6 +18,8 @@ export const UserTable: React.FC = () => {
 
     const showErrorToast = useErrorToast();
 
+
+
     const removeRow = useCallback((id: string | number) => {
         if (typeof id === "number") {
             try {
@@ -43,6 +45,16 @@ export const UserTable: React.FC = () => {
         dispatch(setLoadingUser(isLoading))
     }, [dispatch])
 
+    useEffect(() => {
+        if (!dataFetched) {
+            try {
+                dispatch(getUsers());
+            } catch (error: unknown) {
+                showErrorToast(`Error while fetching periodic elements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+    }, [dispatch, showErrorToast, dataFetched]);
+
     const refreshData = useCallback(() => {
         setLoading(true);
 
@@ -56,16 +68,6 @@ export const UserTable: React.FC = () => {
             }
         }, 1500);
     }, [dispatch, showErrorToast, setLoading]);
-
-    useEffect(() => {
-        if (!dataFetched) {
-            try {
-                dispatch(getUsers());
-            } catch (error: unknown) {
-                showErrorToast(`Error while fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
-        }
-    }, [dispatch, showErrorToast, dataFetched, setLoading]);
 
     const columns = generateColumns<User>(
         ["id", "name", "email", "username", "phone"],
@@ -88,7 +90,9 @@ export const UserTable: React.FC = () => {
                                 removeRow={removeRow}
                                 refreshData={refreshData}
                                 setLoading={setLoading}
-                                isLoading={isLoading}/>
+                                isLoading={isLoading}
+                                dataFetched={dataFetched}
+                                />
                         </div>
                     </div>
                 </div>
