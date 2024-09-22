@@ -31,7 +31,8 @@ export default function Features() {
             title: "User Experience",
             items: [
                 "Pagination",
-                "Table skeleton"
+                "Table skeleton",
+                "Spinner"
             ]
         },
         {
