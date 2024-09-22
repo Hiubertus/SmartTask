@@ -1,20 +1,44 @@
 import React from "react";
-import { removeUser } from "@/lib/features/user/userAction";
 import { Button, DropdownMenu, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuContent } from "@/components";
-import {Trash2, Star, MoreHorizontal} from "lucide-react";
-import { User } from "@/lib/features/user/userSlice"
-import {useAppDispatch} from "@/lib/hooks";
+import { Trash2, Star, MoreHorizontal } from "lucide-react";
 import { Row } from "@tanstack/table-core";
+import {useAppDispatch, useAppSelector} from "@/lib/hooks";
+import {RootState} from "@/lib/store";
+import {setRowPinning, setRowSelection} from "@/lib/features/table/tableSlice";
 
-interface ActionsCellProps {
-    row: Row<User>;  // Typ row jako Row<User>
+interface HasId {
+    id: string | number;
 }
 
-export const ActionsCell: React.FC<ActionsCellProps> = ({ row }) => {
+interface ActionsCellProps<TData extends HasId> {
+    row: Row<TData>;
+    tableId: string
+    removeRow: (id: string | number) => void;
+}
+
+export function ActionsCell<TData extends HasId>({row, removeRow, tableId}: ActionsCellProps<TData>) {
+
     const dispatch = useAppDispatch();
+    const {
+        rowPinning,
+        rowSelection
+    } = useAppSelector((state: RootState) => state.table[tableId]);
 
     const handleDelete = () => {
-        dispatch(removeUser(row.original.id));
+        const id = row.original.id;
+
+        const newRowPinning = { ...rowPinning };
+        if (newRowPinning.top) {
+            newRowPinning.top = newRowPinning.top.filter(pinnedId => pinnedId !== row.id);
+        }
+
+        const newRowSelection = { ...rowSelection };
+        delete newRowSelection[row.id];
+
+        dispatch(setRowPinning({ tableId, rowPinning: newRowPinning }));
+        dispatch(setRowSelection({ tableId, rowSelection: newRowSelection }));
+
+        removeRow(id);
     };
 
     return (
@@ -26,10 +50,7 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({ row }) => {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => {
-                    row.pin(false);
-                    handleDelete();  // Wywołanie funkcji handleDelete
-                }}>
+                <DropdownMenuItem onClick={handleDelete}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                 </DropdownMenuItem>
@@ -40,4 +61,4 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({ row }) => {
             </DropdownMenuContent>
         </DropdownMenu>
     );
-};
+}

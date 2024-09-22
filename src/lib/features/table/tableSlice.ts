@@ -7,6 +7,10 @@ import {
     PaginationState,
 } from "@tanstack/react-table";
 
+interface TablesState {
+    [tableId: string]: TableState;
+}
+
 interface TableState {
     sorting: SortingState;
     columnFilters: ColumnFiltersState;
@@ -18,7 +22,7 @@ interface TableState {
     selectedColumn: string;
 }
 
-export const initialState: TableState = {
+export const tableInitialState: TableState = {
     sorting: [],
     columnFilters: [],
     globalFilter: "",
@@ -35,37 +39,51 @@ export const initialState: TableState = {
     selectedColumn: "",
 };
 
+const initialState: TablesState = {
+    "1": tableInitialState,
+    "2": tableInitialState,
+};
+
 const tableSlice = createSlice({
     name: "table",
     initialState,
     reducers: {
-        setSorting: (state, action: PayloadAction<SortingState>) => {
-            state.sorting = action.payload;
+        setSorting: (state, action: PayloadAction<{ tableId: string; sorting: SortingState }>) => {
+            const { tableId, sorting } = action.payload;
+            state[tableId].sorting = sorting;
         },
-        setColumnFilters: (state, action: PayloadAction<ColumnFiltersState>) => {
-            state.columnFilters = action.payload;
+        setColumnFilters: (state, action: PayloadAction<{ tableId: string; columnFilters: ColumnFiltersState }>) => {
+            const { tableId, columnFilters } = action.payload;
+            state[tableId].columnFilters = columnFilters;
         },
-        setGlobalFilter: (state, action: PayloadAction<string>) => {
-            state.globalFilter = action.payload;
+        setColumnVisibility: (state, action: PayloadAction<{tableId: string; columnVisibility: VisibilityState}>) => {
+            const { tableId, columnVisibility } = action.payload;
+            state[tableId].columnVisibility = columnVisibility;
         },
-        setColumnVisibility: (state, action: PayloadAction<VisibilityState>) => {
-            state.columnVisibility = action.payload;
+        setRowSelection: (state, action: PayloadAction<{tableId: string; rowSelection: Record<string, boolean>}>) => {
+            const { tableId, rowSelection } = action.payload;
+            state[tableId].rowSelection = rowSelection;
         },
-        setRowSelection: (state, action: PayloadAction<Record<string, boolean>>) => {
-            state.rowSelection = action.payload;
+        setRowPinning: (state, action: PayloadAction<{tableId: string; rowPinning: RowPinningState}>) => {
+            const { tableId, rowPinning } = action.payload;
+            state[tableId].rowPinning = rowPinning;
         },
-        setRowPinning: (state, action: PayloadAction<RowPinningState>) => {
-            state.rowPinning = action.payload;
+        setGlobalFilter: (state, action: PayloadAction<{ tableId: string; globalFilter: string }>) => {
+            const { tableId, globalFilter } = action.payload;
+            state[tableId].globalFilter = globalFilter;
         },
-        setPagination: (state, action: PayloadAction<PaginationState>) => {
-            state.pagination = action.payload;
+        setPagination: (state, action: PayloadAction<{ tableId: string; pagination: PaginationState }>) => {
+            const { tableId, pagination } = action.payload;
+            state[tableId].pagination = pagination;
         },
-        setSelectedColumn: (state, action: PayloadAction<string>) => {
-            state.selectedColumn = action.payload;
+        setSelectedColumn: (state, action: PayloadAction<{tableId: string; selectedColumn: string}>) => {
+            const { tableId, selectedColumn } = action.payload;
+            state[tableId].selectedColumn = selectedColumn;
         },
-        setTableState: (state, action: PayloadAction<TableState>) => {
-            return { ...state, ...action.payload };
-        }
+        resetTableState: (state, action: PayloadAction<{ tableId: string}>) => {
+            const { tableId } = action.payload;
+            state[tableId] = tableInitialState
+        },
     },
 });
 
@@ -78,7 +96,7 @@ export const {
     setRowPinning,
     setPagination,
     setSelectedColumn,
-    setTableState
+    resetTableState
 } = tableSlice.actions;
 
 export default tableSlice.reducer;

@@ -40,11 +40,23 @@ export const userSlice = createSlice({
                 state.users.splice(index, 1);
             }
         },
-        setDataFlag: (state, action: PayloadAction<boolean>) => {
-            state.dataFetched = action.payload;
+        putUserField: (state, action: PayloadAction<{ id: number, field: keyof User, value: string }>) => {
+            const { id, field, value } = action.payload;
+            const userIndex = state.users.findIndex(user => user.id === id);
+            if (userIndex !== -1) {
+                state.users[userIndex] = {
+                    ...state.users[userIndex],
+                    [field]: value
+                };
+            }
         },
     }
 });
 
-export const { fetchUsersSuccess, fetchUsersFailure, deleteUser, setDataFlag } = userSlice.actions;
+export const {
+    fetchUsersSuccess,
+    fetchUsersFailure,
+    deleteUser,
+    putUserField
+} = userSlice.actions;
 export default userSlice.reducer;

@@ -1,4 +1,3 @@
-"use client"
 
 import React, {useEffect, useState} from 'react'
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
@@ -18,39 +17,44 @@ import {
     Input,
 } from "@/components/ui"
 import {useAppDispatch, useAppSelector} from "@/lib/hooks";
-import {fetchUsers, removeUser} from "@/lib/features/user/userAction";
 import {Row} from "@tanstack/table-core";
-import {User} from "@/lib/features/user/userSlice";
 import {
-    initialState,
     setPagination,
     setRowPinning,
     setRowSelection,
-    setTableState,
+    resetTableState,
     setSelectedColumn,
     setColumnFilters,
     setGlobalFilter
 } from "@/lib/features/table/tableSlice";
 import {RootState} from "@/lib/store";
 
+interface HasId {
+    id: string | number;
+}
 interface DataTableControlsProps<TData> {
     table: Table<TData>
+    tableId: string
+    removeRow: (id: string | number) => void;
+    refreshData: () => void;
 }
 
-export function DataTableControls<TData>({table}: DataTableControlsProps<TData>) {
+export function DataTableControls<TData>({table, tableId, removeRow, refreshData}: DataTableControlsProps<TData>) {
     const dispatch = useAppDispatch();
     const {
         pagination,
         rowPinning,
-        selectedColumn, globalFilter
-    } = useAppSelector((state: RootState) => state.table);
+        selectedColumn,
+        globalFilter,
+        columnFilters
+    } = useAppSelector((state: RootState) => state.table[tableId]);
     const [filterValue, setFilterValue] = useState("");
 
     useEffect(() => {
-        if (selectedColumn) {
+        if (selectedColumn && selectedColumn !== "each") {
             setFilterValue(table.getColumn(selectedColumn)?.getFilterValue() as string ?? "");
         } else {
-            setFilterValue(globalFilter);
+            setFilterValue(globalFilter ?? "");
         }
     }, [selectedColumn, globalFilter, table]);
 
@@ -65,15 +69,34 @@ export function DataTableControls<TData>({table}: DataTableControlsProps<TData>)
     }
 
     const handlePageChange = (newPageIndex: number) => {
-        dispatch(setPagination({ ...pagination, pageIndex: newPageIndex }));
+        dispatch(setPagination({ tableId: tableId ,pagination: {pageIndex: newPageIndex, pageSize: pagination.pageSize }}));
     };
 
     const handleDeleteSelected = () => {
+        const newPinning = { ...rowPinning };
+        const allRows = table.getRowModel().rows;
+
         selectedRows.forEach((row: Row<TData>) => {
-            row.pin(false);
-            dispatch(removeUser((row.original as User).id));
+            const rowIndex = allRows.findIndex(r => r.id === row.id);
+            if (rowIndex !== -1) {
+                if (newPinning.top?.includes(rowIndex.toString())) {
+                    newPinning.top = newPinning.top.filter(id => id !== rowIndex.toString());
+                }
+
+                removeRow((row.original as HasId).id);
+
+                if (newPinning.top) {
+                    newPinning.top = newPinning.top.map(id => {
+                        const pinnedIndex = parseInt(id);
+                        return pinnedIndex > rowIndex ? (pinnedIndex).toString() : id;
+                    });
+                }
+            }
         });
-        dispatch(setRowSelection({}))
+
+        dispatch(setRowPinning({ tableId: tableId, rowPinning: newPinning }));
+        dispatch(setRowSelection({ tableId: tableId, rowSelection: {} }));
+
         handlePageChange(0);
     };
 
@@ -90,32 +113,40 @@ export function DataTableControls<TData>({table}: DataTableControlsProps<TData>)
             }
         });
 
-        dispatch(setRowPinning(newPinning));
-        dispatch(setRowSelection({}));
+        dispatch(setRowPinning({ tableId: tableId,rowPinning: newPinning}));
+        dispatch(setRowSelection({tableId: tableId, rowSelection: {}}));
     };
 
     const handleReset = () => {
-        dispatch(fetchUsers());
-        dispatch(setTableState(initialState))
+        refreshData();
+        dispatch(resetTableState({ tableId: tableId}))
     };
 
     const handleColumnSelect = (value: string) => {
         if (value !== selectedColumn) {
-            dispatch(setSelectedColumn(value))
-            dispatch(setColumnFilters([]))
-            dispatch(setGlobalFilter(""))
+            dispatch(setSelectedColumn({tableId: tableId, selectedColumn: value}))
+            dispatch(setColumnFilters({tableId: tableId, columnFilters: []}))
+            dispatch(setGlobalFilter({tableId: tableId, globalFilter: ""}))
             table.resetGlobalFilter()
             setFilterValue("")
         }
     }
 
-    const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>, columnId?: string) => {
         const newValue = event.target.value;
-        setFilterValue(newValue);
-        if (selectedColumn) {
-            table.getColumn(selectedColumn)?.setFilterValue(newValue);
+        if (columnId) {
+            const newColumnFilters = [...columnFilters];
+            const filterIndex = newColumnFilters.findIndex(filter => filter.id === columnId);
+            if (filterIndex >= 0) {
+                newColumnFilters[filterIndex] = { ...newColumnFilters[filterIndex], value: newValue };
+            } else {
+                newColumnFilters.push({ id: columnId, value: newValue });
+            }
+            dispatch(setColumnFilters({tableId: tableId, columnFilters: newColumnFilters}));
+            table.getColumn(columnId)?.setFilterValue(newValue);
         } else {
-            dispatch(setGlobalFilter(newValue));
+            setFilterValue(newValue);
+            dispatch(setGlobalFilter({tableId: tableId, globalFilter: newValue}));
             table.setGlobalFilter(newValue);
         }
     };
@@ -128,23 +159,24 @@ export function DataTableControls<TData>({table}: DataTableControlsProps<TData>)
                         {table
                             .getAllColumns()
                             .filter((column) => column.getCanFilter())
-                            .map((column) => (
-                                <Input
-                                    key={column.id}
-                                    placeholder={`Filter ${column.id}...`}
-                                    value={(column.getFilterValue() as string) ?? ""}
-                                    onChange={(event) =>
-                                        column.setFilterValue(event.target.value)
-                                    }
-                                    className="min-w-[150px] flex-grow"
-                                />
-                            ))}
+                            .map((column) => {
+                                const columnFilter = columnFilters.find(filter => filter.id === column.id);
+                                return (
+                                    <Input
+                                        key={column.id}
+                                        placeholder={`Filter ${column.id}...`}
+                                        value={(columnFilter?.value as string) ?? ""}
+                                        onChange={(event) => handleFilterChange(event, column.id)}
+                                        className="min-w-[150px] flex-grow"
+                                    />
+                                );
+                            })}
                     </div>
                 ) : (
                     <Input
                         placeholder={`Filter ${selectedColumn || "all columns"}...`}
                         value={filterValue}
-                        onChange={handleFilterChange}
+                        onChange={(event) => handleFilterChange(event)}
                         className="w-full"
                     />
                 )}
