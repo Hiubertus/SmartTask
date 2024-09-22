@@ -2,54 +2,82 @@
 import React, {useCallback, useEffect} from 'react';
 import {
     editPeriodicElementField,
-    fetchPeriodicElements,
-    removePeriodicElement
+    getPeriodicElements,
+    removePeriodicElement, setLoadingPeriodicElement
 } from "@/lib/features/periodic_element/periodicElementAction";
 import {RootState} from "@/lib/store";
 import {useAppDispatch, useAppSelector} from "@/lib/hooks";
 import {DataTable} from "@/components/UserTable/DataTable";
 import {generateColumns} from "@/components/UserTable/Columns";
 import {PeriodicElement} from "@/lib/features/periodic_element/perdiodicElementSlice";
+import {useErrorToast} from "@/components";
 
 
 export const PeriodicElementsTable: React.FC = () => {
     const dispatch = useAppDispatch();
-    const periodicElements = useAppSelector((state: RootState) => state.periodicElements.periodicElements);
-    const error = useAppSelector((state: RootState) => state.periodicElements.error);
+    const periodicElements = useAppSelector((state: RootState) => state.periodicElements.data);
     const dataFetched = useAppSelector((state: RootState) => state.periodicElements.dataFetched);
+    const isLoading = useAppSelector((state: RootState) => state.periodicElements.isLoading);
+
+    const showErrorToast = useErrorToast();
 
     const removeRow = useCallback((id: string | number) => {
         if (typeof id === "number") {
-            dispatch(removePeriodicElement(id));
+            try {
+                dispatch(removePeriodicElement(id));
+            } catch (error: unknown) {
+                showErrorToast(`Error while removing periodic element of id(${id}): ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [dispatch]);
-
-    const refreshData = useCallback(() => {
-        dispatch(fetchPeriodicElements())
-    }, [dispatch])
+    }, [dispatch, showErrorToast]);
 
     const editField = useCallback((id: string | number, field: keyof PeriodicElement, value: string) => {
         if (typeof id === "number") {
-            dispatch(editPeriodicElementField(id, field, value));
+            try {
+                dispatch(editPeriodicElementField(id, field, value));
+            } catch (error: unknown) {
+                showErrorToast(`Error while editing field "${field}" of periodic element ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [dispatch]);
+    }, [dispatch, showErrorToast]);
+
+    const setLoading = useCallback((isLoading: boolean) => {
+        dispatch(setLoadingPeriodicElement(isLoading))
+    }, [dispatch])
+
+    const refreshData = useCallback(() => {
+        setLoading(true);
+        setTimeout(() => {
+            try {
+                dispatch(getPeriodicElements());
+            } catch (error: unknown) {
+                showErrorToast(`Error while fetching periodic elements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setLoading(false);
+            }
+        }, 1500);
+    }, [dispatch, showErrorToast, setLoading]);
 
     useEffect(() => {
         if (!dataFetched) {
-            dispatch(fetchPeriodicElements())
+            setLoading(true);
+            setTimeout(() => {
+                try {
+                    dispatch(getPeriodicElements());
+                } catch (error: unknown) {
+                    showErrorToast(`Error while fetching periodic elements: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                } finally {
+                    setLoading(false);
+                }
+            }, 1500);
         }
-    }, [dispatch, dataFetched]);
-
-
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
+    }, [dispatch, showErrorToast, dataFetched, setLoading]);
 
     const columns = generateColumns<PeriodicElement>(
         ["id", "name", "weight", "symbol"],
         removeRow,
         editField,
+        setLoading,
         "2"
     );
 
@@ -64,7 +92,9 @@ export const PeriodicElementsTable: React.FC = () => {
                                 data={periodicElements}
                                 tableId={"2"}
                                 removeRow={removeRow}
-                                refreshData={refreshData}/>
+                                refreshData={refreshData}
+                                setLoading={setLoading}
+                                isLoading={isLoading}/>
                         </div>
                     </div>
                 </div>

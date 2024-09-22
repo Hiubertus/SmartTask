@@ -1,49 +1,77 @@
 "use client"
+
 import React, {useCallback, useEffect} from 'react';
-import {editUserField, fetchUsers, removeUser} from "@/lib/features/user/userAction";
+import {editUserField, getUsers, removeUser, setLoadingUser} from "@/lib/features/user/userAction";
 import {RootState} from "@/lib/store";
 import {useAppDispatch, useAppSelector} from "@/lib/hooks";
 import {DataTable} from "@/components/UserTable/DataTable";
-import { User } from "@/lib/features/user/userSlice";
+import {User} from "@/lib/features/user/userSlice";
 import {generateColumns} from "@/components/UserTable/Columns";
+import {useErrorToast} from "@/components";
 
 
 export const UserTable: React.FC = () => {
     const dispatch = useAppDispatch();
-    const users = useAppSelector((state: RootState) => state.users.users);
-    const error = useAppSelector((state: RootState) => state.users.error);
+    const users = useAppSelector((state: RootState) => state.users.data);
     const dataFetched = useAppSelector((state: RootState) => state.users.dataFetched);
+    const isLoading = useAppSelector((state: RootState) => state.users.isLoading);
+
+    const showErrorToast = useErrorToast();
 
     const removeRow = useCallback((id: string | number) => {
         if (typeof id === "number") {
-            dispatch(removeUser(id));
+            try {
+                dispatch(removeUser(id));
+            } catch (error: unknown) {
+                showErrorToast(`Error while removing user with id(${id}): ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [dispatch]);
-
-    const refreshData = useCallback(() => {
-        dispatch(fetchUsers())
-    }, [dispatch])
+    }, [dispatch, showErrorToast]);
 
     const editField = useCallback((id: string | number, field: keyof User, value: string) => {
         if (typeof id === "number") {
-            dispatch(editUserField(id, field, value));
+            try {
+                dispatch(editUserField(id, field, value));
+
+            } catch (error: unknown) {
+                showErrorToast(`Error while editing field "${field}" of user ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [dispatch]);
+    }, [dispatch, showErrorToast]);
+
+    const setLoading = useCallback((isLoading: boolean) => {
+        dispatch(setLoadingUser(isLoading))
+    }, [dispatch])
+
+    const refreshData = useCallback(() => {
+        setLoading(true);
+
+        setTimeout(() => {
+            try {
+                dispatch(getUsers());
+            } catch (error: unknown) {
+                showErrorToast(`Error while fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setLoading(false);
+            }
+        }, 1500);
+    }, [dispatch, showErrorToast, setLoading]);
 
     useEffect(() => {
         if (!dataFetched) {
-            dispatch(fetchUsers())
+            try {
+                dispatch(getUsers());
+            } catch (error: unknown) {
+                showErrorToast(`Error while fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [dispatch, dataFetched]);
-
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
+    }, [dispatch, showErrorToast, dataFetched, setLoading]);
 
     const columns = generateColumns<User>(
         ["id", "name", "email", "username", "phone"],
         removeRow,
         editField,
+        setLoading,
         "1"
     );
 
@@ -58,7 +86,9 @@ export const UserTable: React.FC = () => {
                                 data={users}
                                 tableId={"1"}
                                 removeRow={removeRow}
-                                refreshData={refreshData}/>
+                                refreshData={refreshData}
+                                setLoading={setLoading}
+                                isLoading={isLoading}/>
                         </div>
                     </div>
                 </div>
