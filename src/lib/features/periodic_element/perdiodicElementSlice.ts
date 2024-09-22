@@ -1,5 +1,4 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
-import {User} from "@/lib/features/user/userSlice";
 
 export interface PeriodicElement {
     id: number
@@ -8,19 +7,19 @@ export interface PeriodicElement {
     symbol: string
 }
 
-interface PerdiodicElementState {
+interface PeriodicElementState {
     periodicElements: PeriodicElement[];
     error: string | null;
     dataFetched: boolean;
 }
-const initialState: PerdiodicElementState = {
+const initialState: PeriodicElementState = {
     periodicElements: [],
     error: null,
     dataFetched: false,
 };
 
-export const perdiodicElementSlice = createSlice({
-    name: "perdiodicElements",
+export const periodicElementSlice = createSlice({
+    name: "periodicElements",
     initialState: initialState,
     reducers: {
         fetchPeriodicElementSuccess: (state, action: PayloadAction<PeriodicElement[]>) => {
@@ -56,5 +55,5 @@ export const {
     fetchPeriodicElementFailure,
     deletePeriodicElement,
     putPeriodicElementField
-} = perdiodicElementSlice.actions
-export default perdiodicElementSlice.reducer
+} = periodicElementSlice.actions
+export default periodicElementSlice.reducer

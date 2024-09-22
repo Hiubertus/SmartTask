@@ -14,9 +14,9 @@ import {PeriodicElement} from "@/lib/features/periodic_element/perdiodicElementS
 
 export const PeriodicElementsTable: React.FC = () => {
     const dispatch = useAppDispatch();
-    const periodicElements = useAppSelector((state: RootState) => state.perdiodicElements.periodicElements);
-    const error = useAppSelector((state: RootState) => state.perdiodicElements.error);
-    const dataFetched = useAppSelector((state: RootState) => state.perdiodicElements.dataFetched);
+    const periodicElements = useAppSelector((state: RootState) => state.periodicElements.periodicElements);
+    const error = useAppSelector((state: RootState) => state.periodicElements.error);
+    const dataFetched = useAppSelector((state: RootState) => state.periodicElements.dataFetched);
 
     const removeRow = useCallback((id: string | number) => {
         if (typeof id === "number") {
