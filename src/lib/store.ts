@@ -8,7 +8,7 @@ export const makeStore = () => {
         reducer: {
             users: userReducer,
             table: tableReducer,
-            perdiodicElements: periodicElementReducer
+            periodicElements: periodicElementReducer
         }
     });
 };
